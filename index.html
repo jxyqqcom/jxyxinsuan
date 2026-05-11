@@ -2,8 +2,8 @@
 <html lang="zh-CN">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>➕ 心算挑战 - 小学生智力游戏</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+    <title>⏱️ 限时心算挑战 - 开始游戏版 | 小学生智力游戏</title>
     <style>
         * {
             box-sizing: border-box;
@@ -11,7 +11,7 @@
         }
         body {
             background: linear-gradient(145deg, #2e6b5e, #1e4f44);
-            font-family: 'Comic Neue', 'Comic Sans MS', cursive, sans-serif;
+            font-family: 'Comic Neue', 'Comic Sans MS', 'Chalkboard SE', cursive, sans-serif;
             margin: 0;
             min-height: 100vh;
             display: flex;
@@ -20,13 +20,15 @@
             padding: 20px;
         }
         .game-container {
-            max-width: 600px;
+            max-width: 650px;
             width: 100%;
             background: #fff8eb;
             border-radius: 72px;
             box-shadow: 0 25px 40px rgba(0,0,0,0.3);
             padding: 20px 25px 35px;
             text-align: center;
+            transition: 0.2s;
+            position: relative;
         }
         h1 {
             font-size: 2rem;
@@ -35,9 +37,38 @@
             -webkit-background-clip: text;
             color: transparent;
             margin-top: 0;
+            margin-bottom: 5px;
+        }
+        .sub {
+            font-size: 0.9rem;
+            background: #ffeecc;
+            display: inline-block;
+            padding: 5px 20px;
+            border-radius: 50px;
+            font-weight: bold;
+            margin-bottom: 20px;
+        }
+        .timer-score {
+            display: flex;
+            justify-content: space-between;
+            background: #fbe5bf;
+            border-radius: 60px;
+            padding: 10px 20px;
+            margin: 15px 0;
+            font-weight: bold;
+            font-size: 1.3rem;
+        }
+        .timer-box, .score-box {
+            background: #2c3e2b;
+            padding: 6px 18px;
+            border-radius: 50px;
+            color: #ffefb9;
+        }
+        .question-area {
+            transition: opacity 0.2s;
         }
         .question {
-            font-size: 2.8rem;
+            font-size: 3rem;
             background: white;
             display: inline-block;
             padding: 20px 35px;
@@ -45,6 +76,7 @@
             box-shadow: 0 8px 0 #bb9244;
             margin: 20px 0;
             font-weight: bold;
+            letter-spacing: 4px;
         }
         .answer-area {
             display: flex;
@@ -64,146 +96,545 @@
             box-shadow: 0 6px 0 #9b601f;
             transition: 0.05s linear;
             font-family: monospace;
+            min-width: 100px;
         }
         .opt-btn:active {
             transform: translateY(3px);
             box-shadow: 0 3px 0 #9b601f;
         }
-        .feedback {
-            font-size: 1.3rem;
-            font-weight: bold;
-            margin: 15px 0;
-            padding: 10px;
-            color: #e67e22;
+        .opt-btn.disabled, .opt-btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: translateY(0);
+            box-shadow: 0 6px 0 #9b601f;
+            pointer-events: none;
         }
-        .scoreboard {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            background: #fbe5bf;
+        .feedback {
+            font-size: 1.2rem;
+            font-weight: bold;
+            margin: 12px 0;
+            min-height: 70px;
+            padding: 8px;
+            background: #fff2df;
             border-radius: 50px;
-            padding: 10px 20px;
-            margin-top: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
         }
         .reset-btn {
             background: #ff9f4b;
             border: none;
             font-family: inherit;
             font-weight: bold;
-            padding: 5px 20px;
+            font-size: 1rem;
+            padding: 8px 28px;
             border-radius: 40px;
             cursor: pointer;
             box-shadow: 0 4px 0 #a25d1a;
+            margin-top: 5px;
+            transition: 0.1s;
         }
         .reset-btn:active {
             transform: translateY(2px);
+            box-shadow: 0 1px 0 #a25d1a;
+        }
+        .end-message {
+            font-size: 1.3rem;
+            background: gold;
+            border-radius: 60px;
+            padding: 12px;
+            margin-top: 15px;
+            font-weight: bold;
+            color: #b14500;
         }
         footer {
             font-size: 0.7rem;
             margin-top: 20px;
             color: #7f6139;
         }
-        @media (max-width: 500px) {
-            .question { font-size: 2rem; padding: 12px 20px; }
-            .opt-btn { font-size: 1.2rem; padding: 8px 20px; }
+        /* 开始按钮遮罩层 / 大按钮 */
+        .start-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(255,248,225,0.96);
+            border-radius: 72px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            z-index: 20;
+            backdrop-filter: blur(3px);
+            transition: all 0.3s ease;
+        }
+        .start-btn {
+            background: linear-gradient(135deg, #ffb347, #ff7e05);
+            border: none;
+            font-size: 2.5rem;
+            font-weight: bold;
+            font-family: inherit;
+            padding: 20px 45px;
+            border-radius: 80px;
+            color: white;
+            text-shadow: 2px 2px 0 #b45f1a;
+            cursor: pointer;
+            box-shadow: 0 16px 0 #9b5416;
+            transition: 0.08s linear;
+            margin-bottom: 25px;
+        }
+        .start-btn:active {
+            transform: translateY(4px);
+            box-shadow: 0 8px 0 #9b5416;
+        }
+        .start-hint {
+            font-size: 1.2rem;
+            background: #ffe1aa;
+            padding: 8px 24px;
+            border-radius: 50px;
+            color: #a55117;
+            font-weight: bold;
+        }
+        .game-content {
+            transition: opacity 0.2s;
+        }
+        .blur-content {
+            opacity: 0.5;
+            pointer-events: none;
+        }
+        @media (max-width: 550px) {
+            .question { font-size: 2.2rem; padding: 12px 20px; }
+            .opt-btn { font-size: 1.3rem; padding: 8px 18px; min-width: 70px; }
+            .timer-score { font-size: 1rem; }
+            .start-btn { font-size: 1.8rem; padding: 14px 30px; }
         }
     </style>
 </head>
 <body>
-<div class="game-container">
-    <h1>🧠 心算挑战</h1>
-    <div class="question" id="question">5 + 3 = ?</div>
-    <div class="answer-area" id="options"></div>
-    <div class="feedback" id="feedback">✨ 点击答案，快速计算 ✨</div>
-    <div class="scoreboard">
-        <span>🏆 得分：<strong id="score">0</strong></span>
-        <button class="reset-btn" id="nextBtn">🎲 下一题</button>
+<div class="game-container" id="gameContainer">
+    <!-- 开始游戏覆盖层 -->
+    <div id="startOverlay" class="start-overlay">
+        <button id="startGameBtn" class="start-btn">🚀 开始游戏 🚀</button>
+        <div class="start-hint">⏱️ 限时60秒，每答对一题+10分！<br>点击开始后倒计时启动</div>
     </div>
-    <footer>⭐ 每答对一题 +10分，加油小小数学家！</footer>
+
+    <h1>⏱️ 限时心算挑战</h1>
+    <div class="sub">⚡ 60秒内答对越多，得分越高！</div>
+
+    <div class="timer-score">
+        <span class="timer-box">⏰ 剩余 <span id="timerDisplay">60</span> 秒</span>
+        <span class="score-box">🏆 得分 <span id="scoreDisplay">0</span></span>
+    </div>
+
+    <div id="gameContent" class="game-content">
+        <div class="question" id="question">???</div>
+        <div class="answer-area" id="optionsArea"></div>
+        <div class="feedback" id="feedback">✨ 点击「开始游戏」按钮，挑战限时计算 ✨</div>
+    </div>
+
+    <button class="reset-btn" id="resetGameBtn">🔄 重新开始</button>
+    <div id="endMessage" class="end-message" style="display: none;"></div>
+    <footer>⭐ 每答对一题+10分，倒计时归零游戏结束，展示总分！</footer>
 </div>
 
 <script>
+    // ---------- 游戏配置 ----------
+    const INIT_TIME = 60;          // 60秒倒计时
     let currentScore = 0;
+    let timeLeft = INIT_TIME;
+    let timerInterval = null;
+    let gameActive = false;         // true: 游戏进行中（倒计时走动且可答题）
+    let pendingNext = false;        // 防止快速换题
+    let isGameOverFlag = false;     // 防止重复结束
+
     let currentQuestion = "";
     let correctAnswer = null;
     let options = [];
 
+    // DOM 元素
     const questionEl = document.getElementById("question");
-    const optionsEl = document.getElementById("options");
+    const optionsArea = document.getElementById("optionsArea");
     const feedbackEl = document.getElementById("feedback");
-    const scoreSpan = document.getElementById("score");
-    const nextBtn = document.getElementById("nextBtn");
+    const scoreDisplaySpan = document.getElementById("scoreDisplay");
+    const timerDisplaySpan = document.getElementById("timerDisplay");
+    const resetBtn = document.getElementById("resetGameBtn");
+    const endMessageDiv = document.getElementById("endMessage");
+    const startOverlay = document.getElementById("startOverlay");
+    const startGameBtn = document.getElementById("startGameBtn");
+    const gameContentDiv = document.getElementById("gameContent");
 
-    function generateQuestion() {
+    // ---------- 辅助函数 ----------
+    function shuffleArray(arr) {
+        for (let i = arr.length - 1; i > 0; i--) {
+            const j = Math.floor(Math.random() * (i + 1));
+            [arr[i], arr[j]] = [arr[j], arr[i]];
+        }
+        return arr;
+    }
+
+    // 生成新的算术题（适合小学生，加减法，1~20范围）
+    function generateNewQuestion() {
         const useAdd = Math.random() > 0.5;
         let a, b, ans;
         if (useAdd) {
-            a = Math.floor(Math.random() * 13) + 1;  // 1~13
+            a = Math.floor(Math.random() * 13) + 1;   // 1~13
             b = Math.floor(Math.random() * (20 - a)) + 1;
             ans = a + b;
             currentQuestion = `${a} + ${b} = ?`;
         } else {
-            a = Math.floor(Math.random() * 18) + 3;  // 3~20
+            a = Math.floor(Math.random() * 18) + 3;   // 3~20
             b = Math.floor(Math.random() * (a - 1)) + 1;
             ans = a - b;
             currentQuestion = `${a} - ${b} = ?`;
         }
         correctAnswer = ans;
 
+        // 生成选项: 正确答案 + 两个干扰项 (范围0~30)
         let optSet = new Set();
         optSet.add(ans);
         while (optSet.size < 3) {
-            let offset = Math.floor(Math.random() * 5) - 2;
+            let offset = Math.floor(Math.random() * 5) - 2;  // -2..2
             let candidate = ans + offset;
             if (candidate >= 0 && candidate <= 30 && candidate !== ans) optSet.add(candidate);
             if (optSet.size < 3) optSet.add(ans + 1);
+            if (optSet.size < 3 && ans - 1 >= 0) optSet.add(ans - 1);
         }
         options = Array.from(optSet);
-        for (let i = options.length - 1; i > 0; i--) {
-            const j = Math.floor(Math.random() * (i + 1));
-            [options[i], options[j]] = [options[j], options[i]];
-        }
+        shuffleArray(options);
+        
         questionEl.innerText = currentQuestion;
         renderOptions();
     }
 
+    // 渲染选项按钮（启用/禁用取决于游戏状态）
     function renderOptions() {
-        optionsEl.innerHTML = "";
+        optionsArea.innerHTML = "";
+        if (!gameActive) {
+            // 游戏未激活或已结束：显示灰色禁用按钮
+            options.forEach(opt => {
+                const btn = document.createElement("button");
+                btn.className = "opt-btn disabled";
+                btn.innerText = opt;
+                btn.disabled = true;
+                optionsArea.appendChild(btn);
+            });
+            return;
+        }
+        // 活跃状态，创建可点击按钮
         options.forEach(opt => {
             const btn = document.createElement("button");
             btn.className = "opt-btn";
             btn.innerText = opt;
-            btn.addEventListener("click", () => checkAnswer(opt));
-            optionsEl.appendChild(btn);
+            btn.addEventListener("click", (e) => {
+                if (!gameActive) return;
+                if (pendingNext) return;
+                handleAnswer(opt, btn);
+            });
+            optionsArea.appendChild(btn);
         });
     }
 
-    function checkAnswer(selected) {
+    // 处理答案
+    function handleAnswer(selected, btnElement) {
+        if (!gameActive) return;
+        
         if (selected === correctAnswer) {
+            // 正确加分
             currentScore += 10;
-            scoreSpan.innerText = currentScore;
-            feedbackEl.innerHTML = "✅ 完全正确！ +10分 🌟 好棒！";
+            scoreDisplaySpan.innerText = currentScore;
+            feedbackEl.innerHTML = "✅ 正确！ +10分 🌟 好快！";
             feedbackEl.style.color = "#2b6b2b";
-            generateQuestion();
+            if (btnElement) {
+                btnElement.style.transform = "scale(0.95)";
+                setTimeout(() => { if(btnElement) btnElement.style.transform = ""; }, 150);
+            }
+            goToNextQuestion();
         } else {
-            feedbackEl.innerHTML = `❌ 不对哦，正确答案是 ${correctAnswer}，继续加油！`;
+            // 答错不扣分，显示正确答案并换题
+            feedbackEl.innerHTML = `❌ 哎呀不对，正确答案是 ${correctAnswer}，下一题加油！`;
             feedbackEl.style.color = "#b13e3e";
-            setTimeout(() => {
-                if (feedbackEl.innerHTML.includes("不对")) {
-                    feedbackEl.style.color = "#e67e22";
-                    feedbackEl.innerHTML = "✨ 试试下一题吧！";
-                }
-            }, 1500);
+            if (btnElement) {
+                btnElement.style.transform = "scale(0.95)";
+                setTimeout(() => { if(btnElement) btnElement.style.transform = ""; }, 150);
+            }
+            goToNextQuestion(true);
         }
     }
 
-    nextBtn.addEventListener("click", () => {
-        generateQuestion();
-        feedbackEl.innerHTML = "⭐ 新题目！快选答案～";
+    // 切换到下一题（短暂延迟，避免连点）
+    function goToNextQuestion(isError = false) {
+        if (!gameActive) return;
+        if (pendingNext) return;
+        pendingNext = true;
+        
+        // 禁用所有选项按钮
+        const btns = document.querySelectorAll('.opt-btn');
+        btns.forEach(btn => {
+            btn.style.pointerEvents = 'none';
+            btn.classList.add('disabled');
+        });
+        
+        setTimeout(() => {
+            if (gameActive) {
+                generateNewQuestion();  // 出下一题
+                // 重新启用按钮（renderOptions里会重建，重置样式）
+                const newBtns = document.querySelectorAll('.opt-btn');
+                newBtns.forEach(btn => {
+                    btn.style.pointerEvents = 'auto';
+                    btn.classList.remove('disabled');
+                });
+            }
+            pendingNext = false;
+            if (!gameActive) {
+                disableGameUI();
+            }
+        }, 400);
+    }
+
+    // 倒计时更新（每秒调用）
+    function updateTimer() {
+        if (!gameActive) return;
+        if (timeLeft <= 0) {
+            // 时间到，结束游戏
+            endGame();
+            return;
+        }
+        timeLeft--;
+        timerDisplaySpan.innerText = timeLeft;
+        
+        // 最后5秒闪烁提醒
+        if (timeLeft <= 5) {
+            timerDisplaySpan.style.backgroundColor = "#b13e3e";
+            timerDisplaySpan.style.animation = "pulse 0.8s infinite";
+        } else {
+            timerDisplaySpan.style.backgroundColor = "";
+            timerDisplaySpan.style.animation = "";
+        }
+    }
+
+    // 游戏结束（展示总分，停止一切）
+    function endGame() {
+        if (!gameActive) return;
+        if (isGameOverFlag) return;
+        isGameOverFlag = true;
+        gameActive = false;
+        
+        if (timerInterval) {
+            clearInterval(timerInterval);
+            timerInterval = null;
+        }
+        
+        disableGameUI();
+        
+        // 显示总分面板
+        endMessageDiv.style.display = "block";
+        endMessageDiv.innerHTML = `🎉 时间到啦！ 🎉<br> 你的最终得分：<strong style="font-size:2rem;">${currentScore}</strong> 分！<br> 🧠 真厉害，点击「重新开始」再玩一局 🧠`;
+        feedbackEl.innerHTML = "⏰ 游戏结束！点击「重新开始」回到开始界面～";
+        feedbackEl.style.color = "#d2691e";
+        questionEl.style.opacity = "0.7";
+        
+        // 显示开始覆盖层（但保留重新开始按钮也能重置，覆盖层会遮盖游戏区域）
+        // 注意：覆盖层显示后，用户可以点击开始游戏重新开局，或者点击重新开始重置
+        // 但为了体验，直接显示开始覆盖层，让玩家可以新的一局
+        startOverlay.style.display = "flex";
+        // 确保游戏内容半透明不可点
+        gameContentDiv.style.opacity = "0.5";
+        gameContentDiv.style.pointerEvents = "none";
+    }
+
+    // 禁用UI（按钮不可点）
+    function disableGameUI() {
+        const btns = document.querySelectorAll('.opt-btn');
+        btns.forEach(btn => {
+            btn.disabled = true;
+            btn.classList.add('disabled');
+            btn.style.pointerEvents = 'none';
+        });
+    }
+
+    // 重置所有状态回到未开始（显示开始界面，清除分数，停止一切）
+    function resetToStartScreen() {
+        // 停止倒计时
+        if (timerInterval) {
+            clearInterval(timerInterval);
+            timerInterval = null;
+        }
+        
+        // 重置标志
+        gameActive = false;
+        isGameOverFlag = false;
+        pendingNext = false;
+        currentScore = 0;
+        timeLeft = INIT_TIME;
+        
+        // 更新显示
+        scoreDisplaySpan.innerText = "0";
+        timerDisplaySpan.innerText = INIT_TIME;
+        endMessageDiv.style.display = "none";
+        questionEl.style.opacity = "1";
+        timerDisplaySpan.style.backgroundColor = "";
+        timerDisplaySpan.style.animation = "";
+        
+        // 清空题目区，显示准备占位符，避免旧题目干扰
+        questionEl.innerText = "???";
+        optionsArea.innerHTML = "";
+        // 设置友善提示
+        feedbackEl.innerHTML = "✨ 点击「开始游戏」按钮，挑战限时计算 ✨";
         feedbackEl.style.color = "#e67e22";
+        
+        // 启用游戏内容的视觉效果，但还是不可交互（等待开始）
+        gameContentDiv.style.opacity = "0.6";
+        gameContentDiv.style.pointerEvents = "none";
+        
+        // 显示开始覆盖层
+        startOverlay.style.display = "flex";
+        
+        // 额外清除结束消息动画
+        const btns = document.querySelectorAll('.opt-btn');
+        btns.forEach(btn => btn.remove());
+    }
+
+    // 开始游戏（从覆盖层点击后触发）
+    function startGame() {
+        if (gameActive) return; // 如果已经活跃，不能重复开始
+        
+        // 重置所有内部变量到干净状态（相当于全新游戏）
+        if (timerInterval) {
+            clearInterval(timerInterval);
+            timerInterval = null;
+        }
+        
+        gameActive = true;
+        isGameOverFlag = false;
+        pendingNext = false;
+        currentScore = 0;
+        timeLeft = INIT_TIME;
+        
+        // 更新显示
+        scoreDisplaySpan.innerText = "0";
+        timerDisplaySpan.innerText = INIT_TIME;
+        endMessageDiv.style.display = "none";
+        questionEl.style.opacity = "1";
+        timerDisplaySpan.style.backgroundColor = "";
+        timerDisplaySpan.style.animation = "";
+        feedbackEl.innerHTML = "🎯 游戏开始！快快选择答案吧 🎯";
+        feedbackEl.style.color = "#2b6b2b";
+        
+        // 生成第一道题
+        generateNewQuestion();
+        
+        // 启用游戏区域交互
+        gameContentDiv.style.opacity = "1";
+        gameContentDiv.style.pointerEvents = "auto";
+        
+        // 隐藏覆盖层
+        startOverlay.style.display = "none";
+        
+        // 启动倒计时
+        timerInterval = setInterval(() => {
+            if (gameActive) {
+                updateTimer();
+            } else if (!gameActive && timerInterval) {
+                // 如果游戏非活跃（比如被人为重置），清除定时器
+                clearInterval(timerInterval);
+                timerInterval = null;
+            }
+        }, 1000);
+    }
+
+    // 重置（通过重新开始按钮）：清空所有，回到开始界面，并且显示覆盖层。
+    function handleReset() {
+        // 停止计时
+        if (timerInterval) {
+            clearInterval(timerInterval);
+            timerInterval = null;
+        }
+        gameActive = false;
+        isGameOverFlag = false;
+        pendingNext = false;
+        currentScore = 0;
+        timeLeft = INIT_TIME;
+        
+        // 更新UI
+        scoreDisplaySpan.innerText = "0";
+        timerDisplaySpan.innerText = INIT_TIME;
+        endMessageDiv.style.display = "none";
+        questionEl.innerText = "???";
+        optionsArea.innerHTML = "";
+        questionEl.style.opacity = "1";
+        timerDisplaySpan.style.backgroundColor = "";
+        timerDisplaySpan.style.animation = "";
+        feedbackEl.innerHTML = "✨ 点击「开始游戏」按钮，挑战限时计算 ✨";
+        feedbackEl.style.color = "#e67e22";
+        
+        // 让游戏内容半透明不可交互
+        gameContentDiv.style.opacity = "0.6";
+        gameContentDiv.style.pointerEvents = "none";
+        
+        // 确保覆盖层显示（开始按钮）
+        startOverlay.style.display = "flex";
+        
+        // 清理残留的按钮列表
+        const btns = document.querySelectorAll('.opt-btn');
+        btns.forEach(btn => btn.remove());
+    }
+
+    // 监听开始按钮
+    startGameBtn.addEventListener("click", () => {
+        // 如果已经在游戏中，先重置再开始（但一般覆盖层时游戏未激活）
+        if (gameActive) {
+            // 极少数情况：如果覆盖层异常显示且游戏活跃，先强制重置
+            handleReset();
+        }
+        startGame();
+    });
+    
+    // 监听重新开始按钮
+    resetBtn.addEventListener("click", () => {
+        handleReset();
     });
 
-    generateQuestion();
+    // 添加脉冲动画样式
+    const styleSheet = document.createElement("style");
+    styleSheet.textContent = `
+        @keyframes pulse {
+            0% { opacity: 1; transform: scale(1); background-color: #b13e3e; }
+            50% { opacity: 0.8; transform: scale(1.02); background-color: #ff6b6b; }
+            100% { opacity: 1; transform: scale(1); background-color: #b13e3e; }
+        }
+        .timer-box {
+            transition: 0.2s;
+        }
+    `;
+    document.head.appendChild(styleSheet);
+    
+    // 初始化界面：显示开始覆盖层，禁用游戏交互，分数时间为初始值，无题目
+    function initPage() {
+        gameActive = false;
+        isGameOverFlag = false;
+        currentScore = 0;
+        timeLeft = INIT_TIME;
+        scoreDisplaySpan.innerText = "0";
+        timerDisplaySpan.innerText = INIT_TIME;
+        endMessageDiv.style.display = "none";
+        questionEl.innerText = "???";
+        optionsArea.innerHTML = "";
+        questionEl.style.opacity = "1";
+        timerDisplaySpan.style.backgroundColor = "";
+        timerDisplaySpan.style.animation = "";
+        feedbackEl.innerHTML = "✨ 点击「开始游戏」按钮，挑战限时计算 ✨";
+        feedbackEl.style.color = "#e67e22";
+        gameContentDiv.style.opacity = "0.6";
+        gameContentDiv.style.pointerEvents = "none";
+        startOverlay.style.display = "flex";
+        // 确保没有残留计时器
+        if (timerInterval) clearInterval(timerInterval);
+        timerInterval = null;
+    }
+    
+    initPage();
 </script>
 </body>
 </html>
